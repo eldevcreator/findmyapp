@@ -1,0 +1,28 @@
+name = "cf-tg-spy"
+main = "main.js"
+compatibility_date = "2024-09-01"
+
+[ai]
+binding = "AI"
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+persist = true
+
+[vars]
+# BOT_TOKEN хранится как секрет (wrangler secret put BOT_TOKEN), не светим в файле
+VAULT_CHANNEL_ID = "-1003987635855"
+YT_VIDEO_QUALITY = "360"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "spy-db"
+database_id = "a527b731-391f-4ed5-88c4-e325b8d440e2"
+
+[assets]
+directory = "image"
+binding = "ASSETS"
+
+[triggers]
+crons = ["* * * * *"]

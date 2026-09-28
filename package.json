@@ -1,0 +1,19 @@
+{
+  "name": "newbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "backup": "powershell -NoProfile -Command \"if (!(Test-Path 'backups')) { New-Item -ItemType Directory -Path 'backups' | Out-Null }; $f = 'backups/spy-db-' + (Get-Date -Format 'yyyy-MM-dd_HH-mm') + '.sql'; wrangler d1 export spy-db --remote --output $f; Write-Output ('Saved: ' + $f)\"",
+    "deploy": "wrangler deploy",
+    "dbstats": "wrangler d1 execute spy-db --remote --command \"SELECT 'messages' AS t, COUNT(*) AS c FROM messages UNION ALL SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'authorized_users', COUNT(*) FROM authorized_users UNION ALL SELECT 'connections', COUNT(*) FROM connections\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "grammy": "^1.46.0"
+  }
+}

@@ -2,32 +2,6 @@ node_modules/
 .wrangler/
 backups/
 opencode.json
-
-# the public repo holds only what the APK build needs; the bot source and the
-# third-party design reference stay local
-main.js
-main.smoke.mjs
-_*_bot.mjs
-fmp_page.html
-schema.sql
-wrangler.toml
-package.json
-package-lock.json
-track_page.html
-ПРИМЕРДИЗАЙНПРОГРАММЫ/
-image/
 *.cjs
 test_*.mjs
 smoke_entry.mjs
-
-# android
-android/.gradle/
-android/build/
-android/app/build/
-android/local.properties
-android/app/release/
-android/out/
-*.apk
-*.aab
-*.keystore
-*.jks
