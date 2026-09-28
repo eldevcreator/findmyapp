@@ -52,6 +52,21 @@ jobs:
           grep -E "^e: |error:|^> Task .* FAILED" build.log | head -40 >> "$GITHUB_STEP_SUMMARY" || true
           grep -E "^e: |error:|^> Task .* FAILED" build.log | head -40 || echo "no compiler lines found"
 
+      - name: Publish compiler errors to ci-logs
+        if: failure()
+        run: |
+          {
+            echo "run #${{ github.run_number }}  $(date -u +%FT%TZ)"
+            grep -E "^e: |error:|^> Task .* FAILED" build.log | head -60
+          } > build-errors.txt || true
+          cd ..
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout -B ci-logs
+          git add -f build-errors.txt
+          git commit -q -m "ci: build errors from run ${{ github.run_number }}" || true
+          git push --force origin ci-logs || echo "could not push ci-logs"
+
       - name: Collect APK
         run: |
           mkdir -p out
