@@ -246,6 +246,31 @@ class MainActivity : Activity() {
         })
         col.addView(login, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
 
+        // ---- 2. restore access with the same code, or with account id + recovery code
+        val restore = card()
+        restore.addView(txt("Восстановить доступ", 17f, INK, true))
+        restore.addView(txt("Если потеряли телефон с приложением. Подойдёт код от бота или ID аккаунта с кодом восстановления.", 13f, GREY2).apply {
+            setPadding(0, dp(6), 0, dp(12))
+        })
+        val recCodeField = input("код от бота (LINK-XXXX-XXXX) или код восстановления").apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        }
+        val recIdField = input("ID аккаунта (ACCT-XXXX-XXXX) — не обязательно").apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        }
+        restore.addView(recCodeField)
+        restore.addView(recIdField)
+        restore.addView(button("Восстановить", RED_SOFT, RED) {
+            val c = recCodeField.text.toString().trim()
+            if (c.isBlank()) { status?.text = "Вставьте код"; return@button }
+            status?.text = "Восстанавливаю…"
+            Server.recoverAccount(this, recIdField.text.toString(), c) { ok, msg ->
+                if (ok) { showHome(); status?.text = "Доступ восстановлен: " + msg }
+                else status?.text = "Не получилось: " + msg
+            }
+        })
+        col.addView(restore, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+
         if (Prefs.deviceId.isBlank()) {
             val c = card()
             c.addView(txt("Аккаунт", 17f, INK, true))
@@ -259,7 +284,7 @@ class MainActivity : Activity() {
                 letterSpacing = 0.18f
             })
             c.addView(codeBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
-            c.addView(txt("Скопируйте код и откройте страницу с картой:\n" + Server.BASE + "/track?code=" + Uri.encode(Prefs.code) + "&auto=1", 12f, RED).apply {
+            c.addView(txt("Этот код связывает именно этот телефон с вашим Telegram-аккаунтом. Он создаётся на устройстве и нигде не выдаётся по нику.", 12f, GREY2).apply {
                 setPadding(0, dp(12), 0, dp(4))
             })
             c.addView(button("Привязать к серверу", RED_SOFT, RED) { pair() })
@@ -271,7 +296,7 @@ class MainActivity : Activity() {
             val c = card()
             c.addView(txt("Привязано", 17f, INK, true))
             c.addView(txt("id: " + Prefs.deviceId, 12f, GREY).apply { setPadding(0, dp(4), 0, dp(12)) })
-            c.addView(button("Открыть карту", RED, WHITE) { openMap() })
+            c.addView(button("Положение телефона", RED, WHITE) { showMap() })
             c.addView(button("Включить слежение", RED_SOFT, RED) { start() }.apply {
                 (this as View).layoutParams = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) }
             })
@@ -309,10 +334,10 @@ class MainActivity : Activity() {
         c.addView(txt("Устройство не выбрано", 16f, INK, true).apply {
             gravity = Gravity.CENTER; setPadding(0, dp(12), 0, 0)
         })
-        c.addView(txt("Скопируйте код на телефоне и вставьте его в разделе «Главное», либо откройте страницу с картой в браузере.", 13f, GREY2).apply {
+        c.addView(txt("Привяжите телефон в разделе «Главное» и включите слежение — здесь появится его положение.", 13f, GREY2).apply {
             gravity = Gravity.CENTER; setPadding(0, dp(8), 0, 0)
         })
-        c.addView(button("Открыть страницу с картой", RED_SOFT, RED) { openMap() }.apply {
+        c.addView(button("Перейти к привязке", RED_SOFT, RED) { showHome() }.apply {
             (this as View).layoutParams = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) }
         })
         col.addView(c)
@@ -387,13 +412,6 @@ class MainActivity : Activity() {
     private fun testRing() {
         try { startService(Intent(this, TrackService::class.java).setAction(TrackService.ACTION_RING)) }
         catch (e: Exception) { status?.text = e.message }
-    }
-
-    private fun openMap() {
-        try {
-            val url = if (Prefs.code.isBlank()) Server.BASE + "/track" else Server.BASE + "/track?code=" + Uri.encode(Prefs.code) + "&auto=1"
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        } catch (e: Exception) { status?.text = e.message }
     }
 
     private fun enableAdmin() {

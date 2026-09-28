@@ -120,6 +120,30 @@ object Server {
         }
     }
 
+    /**
+     * Restores access with either the LINK code the bot sent, or the account id
+     * plus the recovery code. Pass an empty accountId when using the LINK code.
+     */
+    fun recoverAccount(ctx: Context, accountId: String, code: String, onDone: (Boolean, String) -> Unit) {
+        val acct = accountId.trim().uppercase().replace("\"", "")
+        val payload = if (acct.isBlank()) {
+            """{"code":"${code.trim().uppercase()}"}"""
+        } else {
+            """{"account_id":"$acct","recovery_code":"${code.trim().lowercase()}"}"""
+        }
+        post(ctx, "/api/track/account/recover", payload) { ok, out ->
+            if (!ok) { onDone(false, out); return@post }
+            try {
+                val o = org.json.JSONObject(out)
+                if (o.optBoolean("ok")) {
+                    Prefs.accountId = o.getString("account_id")
+                    Prefs.accountToken = o.getString("token")
+                    onDone(true, Prefs.accountId)
+                } else onDone(false, o.optString("error", "ошибка"))
+            } catch (e: Exception) { onDone(false, e.message ?: "плохой ответ") }
+        }
+    }
+
     fun ping(ctx: Context, lat: Double, lon: Double, acc: Float, speed: Float, battery: Float, charging: Boolean, onDone: (Boolean) -> Unit) {
         val b = """{"device_id":"${Prefs.deviceId}","token":"${Prefs.token}","lat":$lat,"lon":$lon,"acc":$acc,"speed":$speed,"battery":$battery,"charging":$charging}"""
         post(ctx, "/api/track/ping", b) { ok, _ -> onDone(ok) }
