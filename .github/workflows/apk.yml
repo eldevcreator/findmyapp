@@ -41,7 +41,16 @@ jobs:
           ls "$ANDROID_HOME" || true
 
       - name: Build release
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon 2>&1 | tee build.log
+
+      - name: Show compiler errors
+        if: failure()
+        run: |
+          echo "### build errors" >> "$GITHUB_STEP_SUMMARY"
+          grep -E "^e: |error:|^> Task .* FAILED" build.log | head -40 >> "$GITHUB_STEP_SUMMARY" || true
+          grep -E "^e: |error:|^> Task .* FAILED" build.log | head -40 || echo "no compiler lines found"
 
       - name: Collect APK
         run: |

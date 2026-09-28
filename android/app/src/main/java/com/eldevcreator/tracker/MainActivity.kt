@@ -3,6 +3,7 @@ package com.eldevcreator.tracker
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -384,7 +385,7 @@ class MainActivity : Activity() {
     // ---------------------------------------------------------------- actions
 
     private fun copyCode() {
-        val cm = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
         cm.setPrimaryClip(android.content.ClipData.newPlainText("code", Prefs.code))
         status?.text = "Код скопирован: " + Prefs.code
     }
@@ -415,7 +416,7 @@ class MainActivity : Activity() {
     }
 
     private fun enableAdmin() {
-        val dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         try {
             startActivity(Intent(dpm.setDeviceAdminActiveIntent(ComponentName(this, AdminReceiver::class.java))))
         } catch (e: Exception) { status?.text = e.message }

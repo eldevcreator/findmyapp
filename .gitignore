@@ -8,6 +8,7 @@ opencode.json
 main.js
 main.smoke.mjs
 _*_bot.mjs
+fmp_page.html
 schema.sql
 wrangler.toml
 package.json
