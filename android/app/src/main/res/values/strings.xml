@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Найти телефон</string>
+    <string name="code_hint">Код привязки — он создан на этом телефоне и действует только для вас</string>
+    <string name="map_url_prefix">Ссылка на карту: </string>
+    <string name="copy">Скопировать код</string>
+    <string name="pair">Привязать к серверу</string>
+    <string name="start_tracking">Включить слежение</string>
+    <string name="stop">Выключить</string>
+    <string name="open_settings">Разрешения приложения</string>
+    <string name="enable_admin">Разрешить блокировку экрана</string>
+    <string name="test_ring">Проверить звук</string>
+    <string name="tracking_active">Слежение включено. Батарея расходуется.</string>
+    <string name="not_paired">Ещё не привязано</string>
+    <string name="pairing">Привязываю…</string>
+    <string name="paired">Готово. Откройте ссылку с кодом.</string>
+    <string name="paired_id">Привязано. id: %1$s</string>
+    <string name="pair_failed">Не получилось</string>
+    <string name="running">Слежение идёт</string>
+    <string name="failed">Ошибка</string>
+    <string name="copied">Код скопирован</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- map pin, white, centred in the 72dp adaptive safe zone -->
+    <group android:scaleX="0.62" android:scaleY="0.62" android:translateX="20.5" android:translateY="20.5">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,6C36.3,6 22,20.3 22,38c0,24 32,64 32,64s32,-40 32,-64C86,20.3 71.7,6 54,6zM54,52c-7.7,0 -14,-6.3 -14,-14s6.3,-14 14,-14 14,6.3 14,14 -6.3,14 -14,14z" />
+    </group>
+</vector>
