@@ -1,0 +1,19 @@
+run #6  2026-09-28T12:49:27Z
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/MainActivity.kt:184:9 Unresolved reference: tag
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/MainActivity.kt:190:20 Unresolved reference: tag
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/MainActivity.kt:421:38 Unresolved reference: setDeviceAdminActiveIntent
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:139:44 Unresolved reference: BLUETOOTH_LE_SERVICE
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:139:91 Unresolved reference: BluetoothLeManager
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:140:18 Unresolved reference: isAdvertisingSupported
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:141:23 Unresolved reference: bluetoothLeAdvertiser
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:153:77 Unresolved reference: AdvertisingCallback
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:154:13 'onStartFailure' overrides nothing
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:164:13 Unresolved reference: hasSystemFeature
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:174:44 Unresolved reference: BLUETOOTH_LE_SERVICE
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:174:91 Unresolved reference: BluetoothLeManager
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:175:22 Unresolved reference: bluetoothLeScanner
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:226:36 Unresolved reference: MODE_RING
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:240:35 Type mismatch: inferred type is Class<AdminReceiver> but ComponentName was expected
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:256:80 Unresolved reference: AdvertisingCallback
+e: file:///home/runner/work/findmyapp/findmyapp/android/app/src/main/java/com/eldevcreator/tracker/TrackService.kt:257:54 Cannot create an instance of an abstract class
+> Task :app:compileReleaseKotlin FAILED
