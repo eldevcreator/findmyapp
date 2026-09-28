@@ -54,6 +54,7 @@ jobs:
 
       - name: Publish compiler errors to ci-logs
         if: failure()
+        continue-on-error: true
         run: |
           {
             echo "run #${{ github.run_number }}  $(date -u +%FT%TZ)"
@@ -62,9 +63,9 @@ jobs:
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
           git checkout -B ci-logs
-          git add -f android/build-errors.txt
+          git add -f build-errors.txt
           git commit -q -m "ci: build errors from run ${{ github.run_number }}" || true
-          git push --force origin ci-logs || echo "could not push ci-logs"
+          git push --force origin ci-logs
 
       - name: Collect APK
         run: |
