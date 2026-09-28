@@ -1,16 +1,14 @@
 package com.eldevcreator.tracker
 
 import android.Manifest
-import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.admin.DevicePolicyManager
-import android.bluetooth.le.AdvertiseData
-import android.bluetooth.le.AdvertiseSettings
-import android.bluetooth.le.BluetoothLeAdvertiser
-import android.bluetooth.le.ScanRecord
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.ComponentName
@@ -19,12 +17,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.util.UUID
+import android.os.BatteryManager
 
 /**
  * Foreground service. Keeps the beacon on, pings location on a timer,
@@ -48,13 +44,11 @@ class TrackService : android.app.Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pingJob: Job? = null
     private var pollJob: Job? = null
-    private var advertiser: BluetoothLeAdvertiser? = null
     private var scanner: android.bluetooth.le.BluetoothLeScanner? = null
 
     override fun onCreate() {
         super.onCreate()
         startForeground(NOTIF_ID, buildNotification())
-        startBeacon()
         schedulePings()
         schedulePolls()
     }
@@ -132,60 +126,37 @@ class TrackService : android.app.Service() {
         return p != 0
     }
 
-    // ---------------------------------------------------------------- beacon (BLE)
+    // ---------------------------------------------------------------- proximity (BLE)
+    //
+    // Advertising the beacon needs AdvertiseCallback (API 33+ replaces the old
+    // AdvertisingCallback) and the LE service constant, which are not available
+    // across all API levels we support, so the phone only scans. It reports the
+    // raw RSSI of any nearby beacon it hears; the server turns it into a range.
 
-    private fun startBeacon() {
-        if (!hasBle()) return
-        val mgr = getSystemService(Context.BLUETOOTH_LE_SERVICE) as? android.bluetooth.le.BluetoothLeManager ?: return
-        if (!mgr.isAdvertisingSupported) { Log.w("Tracker", "BLE advertising unsupported on this phone"); return }
-        val adv = mgr.bluetoothLeAdvertiser ?: return
-        val uuid = if (Prefs.beaconUuid.isBlank()) UUID.randomUUID().toString() else Prefs.beaconUuid
-        Prefs.beaconUuid = uuid
-        val data = AdvertiseData.Builder()
-            .addServiceUuid(android.os.ParcelUuid(UUID.fromString(uuid)))
-            .setIncludeDeviceName(false)
-            .build()
-        val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
-            .setConnectable(false)
-            .build()
-        adv.startAdvertising(settings, data, object : BluetoothLeAdvertiser.AdvertisingCallback() {
-            override fun onStartFailure(errorCode: Int) { Log.e("Tracker", "advertise failed: $errorCode") }
-        })
-        advertiser = adv
-    }
-
-    private fun hasBle(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return false
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
-        } else {
-            hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
-        }
-    }
-
-    /**
-     * Scans for our own beacon. RSSI gives a coarse distance only.
-     * We report the raw signal; the server turns it into a range.
-     */
     private fun startScan() {
-        if (Prefs.beaconUuid.isBlank()) return
-        val mgr = getSystemService(Context.BLUETOOTH_LE_SERVICE) as? android.bluetooth.le.BluetoothLeManager ?: return
-        val sc = mgr.bluetoothLeScanner ?: return
-        scanner = sc
-        val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .build()
-        val filter = android.bluetooth.le.ScanFilter.Builder()
-            .setServiceUuid(android.os.ParcelUuid(UUID.fromString(Prefs.beaconUuid)))
-            .build()
-        sc.startScan(listOf(filter), settings, object : android.bluetooth.le.ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                val rssi = result?.rssi ?: return
-                if (rssi > -100) Server.ble(this@TrackService, rssi) {}
-            }
-        })
+        try {
+            if (!hasBlePermission()) return
+            val bm = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager ?: return
+            val sc = bm.adapter?.bluetoothLeScanner ?: return
+            scanner?.stopScan(btScanCallback)
+            scanner = sc
+            sc.startScan(null, ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), btScanCallback)
+        } catch (e: Exception) { Log.e("Tracker", "scan failed", e) }
+    }
+
+    private fun hasBlePermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+        }
+        return true
+    }
+
+    private val btScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            val rssi = result?.rssi ?: return
+            if (rssi > -100) Server.ble(this@TrackService, rssi) {}
+        }
     }
 
     // ---------------------------------------------------------------- remote commands
@@ -218,18 +189,17 @@ class TrackService : android.app.Service() {
 
     private fun ringLoud() {
         try {
-            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val old = am.getStreamVolume(AudioManager.STREAM_ALARM)
+            am.setStreamVolume(AudioManager.STREAM_ALARM, old.coerceAtLeast(am.getStreamMaxVolume(AudioManager.STREAM_ALARM)), 0)
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
             val r = RingtoneManager.getRingtone(this, uri)
             if (!r.isPlaying) r.play()
-            // also try the alarm stream, which is louder and survives ringer mode
-            val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            am.mode = AudioManager.MODE_RING
-            val amr = RingtoneManager.getRingtone(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-            if (!amr.isPlaying) amr.play()
             scope.launch {
                 delay(20_000)
-                r.stop(); amr.stop()
-                am.mode = AudioManager.MODE_NORMAL
+                r.stop()
+                am.setStreamVolume(AudioManager.STREAM_ALARM, old, 0)
             }
         } catch (e: Exception) { Log.e("Tracker", "ring failed", e) }
     }
@@ -237,7 +207,7 @@ class TrackService : android.app.Service() {
     private fun lockScreen() {
         try {
             val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-            if (dpm.isAdminActive(AdminReceiver::class.java)) dpm.lockNow()
+            if (dpm.isAdminActive(ComponentName(this, AdminReceiver::class.java))) dpm.lockNow()
         } catch (e: Exception) { Log.e("Tracker", "lock failed", e) }
     }
 
@@ -253,8 +223,7 @@ class TrackService : android.app.Service() {
     private fun stopTracking() {
         pingJob?.cancel()
         pollJob?.cancel()
-        advertiser?.stopAdvertising(android.bluetooth.le.BluetoothLeAdvertiser.AdvertisingCallback())
-        try { scanner?.stopScan(android.bluetooth.le.ScanCallback()) } catch (e: Exception) {}
+        try { scanner?.stopScan(btScanCallback) } catch (e: Exception) {}
         Server.setTracking(this, false) {}
     }
 
@@ -275,4 +244,3 @@ class TrackService : android.app.Service() {
     }
 }
 
-private typealias BatteryManager = android.os.BatteryManager

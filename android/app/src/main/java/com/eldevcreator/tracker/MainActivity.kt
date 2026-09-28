@@ -148,6 +148,8 @@ class MainActivity : Activity() {
         showHome()
     }
 
+    private var navBtns: MutableList<LinearLayout> = mutableListOf()
+
     private fun bottomNav(): View {
         val nav = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -161,7 +163,7 @@ class MainActivity : Activity() {
             Triple(R.drawable.ic_map, "Карта", 1),
             Triple(R.drawable.ic_user, "Профиль", 2)
         )
-        val navBtns = mutableListOf<LinearLayout>()
+        navBtns = mutableListOf()
         for ((ic, label, idx) in items) {
             val col = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -181,14 +183,11 @@ class MainActivity : Activity() {
             nav.addView(col)
             navBtns.add(col)
         }
-        tag = navBtns
         return nav
     }
 
     private fun paintNav(active: Int) {
-        @Suppress("UNCHECKED_CAST")
-        val btns = tag as List<LinearLayout>
-        for (b in btns) {
+        for (b in navBtns) {
             val on = (b.tag as Int) == active
             val c = if (on) BLUE else GREY
             (b.getChildAt(0) as ImageView).setColorFilter(c)
@@ -416,9 +415,10 @@ class MainActivity : Activity() {
     }
 
     private fun enableAdmin() {
-        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        // setDeviceAdminActiveIntent() is a hidden API, so use the public action
         try {
-            startActivity(Intent(dpm.setDeviceAdminActiveIntent(ComponentName(this, AdminReceiver::class.java))))
+            val admin = ComponentName(this, AdminReceiver::class.java)
+            startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin))
         } catch (e: Exception) { status?.text = e.message }
     }
 
